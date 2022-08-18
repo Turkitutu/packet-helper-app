@@ -1,4 +1,6 @@
-# packets
+# packet-helper-app
+
+`Still in progress`
 
 ## Project setup
 ```

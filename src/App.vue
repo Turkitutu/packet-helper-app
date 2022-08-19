@@ -36,7 +36,7 @@ export default defineComponent({
     const selectedIndex = ref("1");
     const router = useRouter();
 
-    const lightMode = ref(true);
+    const lightMode = ref(isDark);
 
     router.push({ path: "/read" });
 

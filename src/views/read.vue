@@ -105,7 +105,6 @@ export default defineComponent({
       structureList,
       () => {
         const packet = new Packet(Buffer.from(hexData.value, "hex"));
-        console.log(packet.length, packet.readByte());
         return structureList.value.map((s) => {
           const value = readStruct(packet, s.type);
           console.log(s.type, value);

@@ -179,4 +179,9 @@ h3 {
 .add-struct .el-button {
   min-width: 400px !important;
 }
+
+.ghost {
+  opacity: 0.2;
+  background: var(--el-button-bg-color);
+}
 </style>

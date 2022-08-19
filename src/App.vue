@@ -1,21 +1,31 @@
 <template>
-  <el-container>
-    <el-header>
-      <el-tabs class="demo-tabs">
-        <el-tab-pane label="User" name="first">User</el-tab-pane>
-        <el-tab-pane label="Config" name="second">Config</el-tab-pane>
-        <el-tab-pane label="Role" name="third">Role</el-tab-pane>
-        <el-tab-pane label="Task" name="fourth">Task</el-tab-pane>
-      </el-tabs>
+  <span class="darkmode-text">Dark mode</span>
+  <el-switch @change="toggleDark" v-model="lightMode" />
+  <el-container class="app">
+    <el-header class="el-header">
+      <el-menu
+        class="el-menu-demo"
+        mode="horizontal"
+        :default-active="selectedIndex"
+        @select="handleSelect"
+      >
+        <el-menu-item
+          v-for="item in views"
+          :key="item.index"
+          :index="item.index"
+          :disabled="item.disabled"
+          >{{ item.name }}</el-menu-item
+        >
+      </el-menu>
     </el-header>
-
-    <el-main> <router-view /> </el-main>
+    <el-main class="el-main"> <router-view /> </el-main>
   </el-container>
 </template>
 
 <script lang="ts">
-import { defineComponent } from "vue";
+import { defineComponent, ref } from "vue";
 import { useDark, useToggle } from "@vueuse/core";
+import { useRouter } from "vue-router";
 
 export default defineComponent({
   name: "App",
@@ -23,42 +33,64 @@ export default defineComponent({
   setup() {
     const isDark = useDark();
     const toggleDark = useToggle(isDark);
-    toggleDark();
-    return { toggleDark };
+    const selectedIndex = ref("1");
+    const router = useRouter();
+
+    const lightMode = ref(true);
+
+    router.push({ path: "/read" });
+
+    const views = [
+      { index: "1", name: "Read packet", to: "read", disabled: false },
+      { index: "2", name: "Write packet", to: "write", disabled: true },
+      { index: "3", name: "Tools", to: "", disabled: true },
+    ];
+
+    const handleSelect = (index: number) => {
+      router.push({ path: "/" + views[index - 1].to });
+    };
+
+    return { toggleDark, selectedIndex, handleSelect, views, lightMode };
   },
 });
 </script>
 
 <style>
 #app {
-  font-family: Avenir, Helvetica, Arial, sans-serif;
+  font-family: "Helvetica Neue", Helvetica, "PingFang SC", "Hiragino Sans GB",
+    "Microsoft YaHei", "微软雅黑", Arial, sans-serif;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
-  text-align: center;
-  color: #2c3e50;
+  color: #0074e8;
 }
 
-#nav {
-  padding: 30px;
+.el-header {
+  margin: 0 auto;
+  min-width: 600px;
 }
 
-#nav a {
-  font-weight: bold;
-  color: #545c64;
+.el-main {
+  margin-top: 50px;
 }
 
-#nav a.router-link-exact-active {
-  color: #42b983;
+.el-menu-demo {
+  margin-top: 20px !important;
+  font-size: 30px !important;
+  text-align: center !important;
 }
 
-.demo-tabs > .el-tabs__content {
-  padding: 32px;
-  font-size: 32px;
-  font-weight: 600;
+.el-menu--horizontal {
+  display: flex !important;
+  justify-content: center !important;
 }
 
-.el-tabs__item {
-  font-size: 20px !important;
-  font-weight: 400 !important;
+.el-menu-demo > .el-menu-item {
+  font-family: Verdana, Geneva, Tahoma, sans-serif;
+  font-size: 18px !important;
+}
+
+.darkmode-text {
+  font-size: 13px;
+  margin-right: 5px;
 }
 </style>

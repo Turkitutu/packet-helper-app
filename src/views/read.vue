@@ -7,6 +7,9 @@
       type="textarea"
       placeholder="Put your hex here"
     />
+    <span v-if="invalidHex" style="color: #f56c6c; font-size: 13px"
+      >The hex string data isn't correct! please check it.</span
+    >
 
     <h3>The structure</h3>
     <draggable
@@ -17,7 +20,7 @@
       draggable=".struct-card"
     >
       <template #item="{ element }">
-        <el-card class="struct-card" shadow="always">
+        <el-card class="struct-card" shadow="always" disabled>
           <el-row :gutter="20">
             <el-col :span="6">
               <el-select
@@ -25,17 +28,17 @@
                 class="m-2"
                 placeholder="Select the type"
               >
-                <el-option-group label="Basic">
+                <el-option-group label="String">
                   <el-option
-                    v-for="item in typeList"
+                    v-for="item in stringTypeList"
                     :key="item.key"
                     :label="item.name"
                     :value="item.key"
                   />
                 </el-option-group>
-                <el-option-group label="String">
+                <el-option-group label="Basic">
                   <el-option
-                    v-for="item in stringTypeList"
+                    v-for="item in typeList"
                     :key="item.key"
                     :label="item.name"
                     :value="item.key"
@@ -113,6 +116,7 @@ export default defineComponent({
     let id_increment = 0;
     const textarea = ref("");
     const content = ref<HTMLDivElement | null>(null);
+    const invalidHex = ref(false);
 
     const readStruct = (packet: Packet, type: string, length?: number) => {
       if (type == "bool") return String(packet.readBool());
@@ -139,8 +143,42 @@ export default defineComponent({
       { id: id_increment++, name: "hello", type: "", value: "" },
     ]);
 
+    const updateStructureValues = () => {
+      invalid.value = false;
+      const packet = new Packet(Buffer.from(hexData.value, "hex"));
+      return structureList.value.map((s) => {
+        s.hasLenght = false;
+        if (s.type && stringTypeList.find((t) => t.key == s.type))
+          s.hasLenght = true;
+
+        if (invalid.value) {
+          s.value = "";
+          return s;
+        }
+
+        try {
+          const value = readStruct(packet, s.type, s.length);
+          s.value = s.type ? value : "";
+        } catch (err) {
+          invalid.value = true;
+          s.value = "";
+        }
+        return s;
+      });
+    };
+
     watch(hexData, () => {
       hexData.value = hexData.value.replace(/ /g, "").replace(/\n/g, "");
+      invalidHex.value = false;
+
+      try {
+        Buffer.from(hexData.value, "hex");
+      } catch (error) {
+        invalidHex.value = true;
+        return;
+      }
+
+      updateStructureValues();
     });
 
     const invalid = ref(false);
@@ -148,27 +186,7 @@ export default defineComponent({
     watch(
       structureList,
       () => {
-        invalid.value = false;
-        const packet = new Packet(Buffer.from(hexData.value, "hex"));
-        return structureList.value.map((s) => {
-          s.hasLenght = false;
-          if (s.type && stringTypeList.find((t) => t.key == s.type))
-            s.hasLenght = true;
-
-          if (invalid.value) {
-            s.value = "";
-            return s;
-          }
-
-          try {
-            const value = readStruct(packet, s.type, s.length);
-            s.value = s.type ? value : "";
-          } catch (err) {
-            invalid.value = true;
-            s.value = "";
-          }
-          return s;
-        });
+        updateStructureValues();
       },
       { deep: true }
     );
@@ -214,6 +232,7 @@ export default defineComponent({
       deleteStruct,
       addNewStruct,
       content,
+      invalidHex,
     };
   },
 });

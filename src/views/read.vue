@@ -14,6 +14,7 @@
       item-key="id"
       ghost-class="ghost"
       animation="200"
+      draggable=".struct-card"
     >
       <template #item="{ element }">
         <el-card class="struct-card" shadow="always">
@@ -24,22 +25,52 @@
                 class="m-2"
                 placeholder="Select the type"
               >
-                <el-option
-                  v-for="item in typeList"
-                  :key="item.key"
-                  :label="item.name"
-                  :value="item.key"
-                />
+                <el-option-group label="Basic">
+                  <el-option
+                    v-for="item in typeList"
+                    :key="item.key"
+                    :label="item.name"
+                    :value="item.key"
+                  />
+                </el-option-group>
+                <el-option-group label="String">
+                  <el-option
+                    v-for="item in stringTypeList"
+                    :key="item.key"
+                    :label="item.name"
+                    :value="item.key"
+                  />
+                </el-option-group>
               </el-select>
             </el-col>
-            <el-col :span="16">
-              <el-input
-                class="struct-input"
-                v-model="element.value"
-                :disabled="element.type == ''"
-                :placeholder="element.type == '' ? 'No Data' : ''"
-              />
-            </el-col>
+            <template v-if="!element.hasLenght">
+              <el-col :span="16">
+                <el-input
+                  class="struct-input"
+                  v-model="element.value"
+                  :disabled="element.type == ''"
+                  :placeholder="element.type == '' ? 'No Data' : ''"
+                />
+              </el-col>
+            </template>
+            <template v-else>
+              <el-col :span="3">
+                <el-input
+                  class="struct-input"
+                  v-model="element.length"
+                  type="number"
+                  placeholder="length"
+                />
+              </el-col>
+              <el-col :span="13">
+                <el-input
+                  class="struct-input"
+                  v-model="element.value"
+                  :disabled="element.type == ''"
+                  :placeholder="element.type == '' ? 'No Data' : ''"
+                />
+              </el-col>
+            </template>
             <el-col :span="2" class="m-2">
               <el-button
                 v-if="structureList.length != 1"
@@ -71,6 +102,8 @@ interface Structure {
   name: string;
   type: string;
   value: string;
+  hasLenght?: boolean;
+  length?: number;
 }
 
 export default defineComponent({
@@ -81,11 +114,20 @@ export default defineComponent({
     const textarea = ref("");
     const content = ref<HTMLDivElement | null>(null);
 
-    const readStruct = (packet: Packet, type: string) => {
-      if (type == "byte") return String(packet.readByte());
+    const readStruct = (packet: Packet, type: string, length?: number) => {
+      if (type == "bool") return String(packet.readBool());
+      else if (type == "byte") return String(packet.readByte());
       else if (type == "short") return String(packet.readShort());
       else if (type == "int32") return String(packet.readInt());
       else if (type == "int64") return String(packet.readLong());
+      else if (type == "ubyte") return String(packet.readUnsignedByte());
+      else if (type == "ushort") return String(packet.readUnsignedShort());
+      else if (type == "uint32") return String(packet.readUnsignedInt());
+      else if (type == "uint64") return String(packet.readUnsignedLong());
+
+      if (length)
+        if (type == "win1256") return packet.readString(length, "win1256");
+        else if (type == "utf8") return packet.readString(length, "utf8");
       return "";
     };
 
@@ -101,14 +143,30 @@ export default defineComponent({
       hexData.value = hexData.value.replace(/ /g, "").replace(/\n/g, "");
     });
 
+    const invalid = ref(false);
+
     watch(
       structureList,
       () => {
+        invalid.value = false;
         const packet = new Packet(Buffer.from(hexData.value, "hex"));
         return structureList.value.map((s) => {
-          const value = readStruct(packet, s.type);
-          console.log(s.type, value);
-          s.value = s.type ? value : "";
+          s.hasLenght = false;
+          if (s.type && stringTypeList.find((t) => t.key == s.type))
+            s.hasLenght = true;
+
+          if (invalid.value) {
+            s.value = "";
+            return s;
+          }
+
+          try {
+            const value = readStruct(packet, s.type, s.length);
+            s.value = s.type ? value : "";
+          } catch (err) {
+            invalid.value = true;
+            s.value = "";
+          }
           return s;
         });
       },
@@ -116,10 +174,20 @@ export default defineComponent({
     );
 
     const typeList = [
+      { name: "Boolean", key: "bool" },
       { name: "Byte", key: "byte" },
+      { name: "Unsigned byte", key: "ubyte" },
       { name: "Short", key: "short" },
+      { name: "Unsigned short", key: "ushort" },
       { name: "Int32", key: "int32" },
+      { name: "Unsigned Int32", key: "uint32" },
       { name: "Int64", key: "int64" },
+      { name: "Unsigned Int64", key: "uint64" },
+    ];
+
+    const stringTypeList = [
+      { name: "UTF-8", key: "utf8" },
+      { name: "Windows-1256", key: "win1256" },
     ];
 
     const addNewStruct = () => {
@@ -140,6 +208,7 @@ export default defineComponent({
       textarea,
       structureList,
       typeList,
+      stringTypeList,
       hexData,
       Delete,
       deleteStruct,

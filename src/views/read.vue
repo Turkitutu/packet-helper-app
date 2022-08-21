@@ -3,6 +3,7 @@
     <h3>Data</h3>
     <el-input
       v-model="hexData"
+      @change="onHexDataChange"
       :rows="3"
       type="textarea"
       placeholder="Put your hex here"
@@ -45,6 +46,14 @@
                     :value="item.key"
                   />
                 </el-option-group>
+                <el-option-group label="Unsigned">
+                  <el-option
+                    v-for="item in unsignedTypeList"
+                    :key="item.key"
+                    :label="item.name"
+                    :value="item.key"
+                  />
+                </el-option-group>
               </el-select>
             </el-col>
             <template v-if="!element.hasLenght">
@@ -65,6 +74,7 @@
                   type="number"
                   placeholder="length"
                   @keyup="updateStructureValues()"
+                  @change="updateStructureValues()"
                 />
               </el-col>
               <el-col :span="13">
@@ -97,7 +107,7 @@
 </template>
 
 <script lang="ts">
-import { defineComponent, ref, watch } from "vue";
+import { defineComponent, ref } from "vue";
 import Packet from "@/helpers/packet";
 import draggable from "vuedraggable";
 import { Delete } from "@element-plus/icons-vue";
@@ -131,9 +141,10 @@ export default defineComponent({
       else if (type == "uint32") return String(packet.readUnsignedInt());
       else if (type == "uint64") return String(packet.readUnsignedLong());
 
-      if (length)
+      if (length) {
         if (type == "win1256") return packet.readString(length, "win1256");
         else if (type == "utf8") return packet.readString(length, "utf8");
+      }
       return "";
     };
 
@@ -164,17 +175,23 @@ export default defineComponent({
         }
 
         try {
-          const value = readStruct(packet, s.type, s.length);
+          const value = readStruct(
+            packet,
+            s.type,
+            s.length ? Number(s.length) : undefined
+          );
           s.value = s.type ? value : "";
         } catch (err) {
           invalid.value = true;
           s.value = "";
+          console.log(packet.available);
+          console.error(err);
         }
         return s;
       });
     };
 
-    watch(hexData, () => {
+    const onHexDataChange = () => {
       hexData.value = hexData.value.replace(/ /g, "").replace(/\n/g, "");
       invalidHex.value = false;
 
@@ -186,19 +203,22 @@ export default defineComponent({
       }
 
       updateStructureValues();
-    });
+    };
 
     const invalid = ref(false);
 
     const typeList = [
       { name: "Boolean", key: "bool" },
       { name: "Byte", key: "byte" },
-      { name: "Unsigned byte", key: "ubyte" },
       { name: "Short", key: "short" },
-      { name: "Unsigned short", key: "ushort" },
       { name: "Int32", key: "int32" },
-      { name: "Unsigned Int32", key: "uint32" },
       { name: "Int64", key: "int64" },
+    ];
+
+    const unsignedTypeList = [
+      { name: "Unsigned byte", key: "ubyte" },
+      { name: "Unsigned short", key: "ushort" },
+      { name: "Unsigned Int32", key: "uint32" },
       { name: "Unsigned Int64", key: "uint64" },
     ];
 
@@ -226,6 +246,7 @@ export default defineComponent({
       structureList,
       typeList,
       stringTypeList,
+      unsignedTypeList,
       hexData,
       Delete,
       deleteStruct,
@@ -234,6 +255,7 @@ export default defineComponent({
       invalidHex,
       updateStructureValues,
       onTypeChange,
+      onHexDataChange,
     };
   },
 });

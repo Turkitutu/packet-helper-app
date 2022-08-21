@@ -24,6 +24,19 @@
     >
       <template #item="{ element }">
         <el-card class="struct-card" shadow="always">
+          <el-row>
+            <el-popover
+              placement="bottom"
+              title="Rename"
+              :width="200"
+              trigger="click"
+            >
+              <el-input class="struct-input" v-model="element.name" />
+              <template #reference>
+                <label class="item-label">{{ element.name }}</label>
+              </template>
+            </el-popover>
+          </el-row>
           <el-row :gutter="20">
             <el-col :span="6">
               <el-select
@@ -168,7 +181,7 @@ export default defineComponent({
     );
 
     const structureList = ref<Structure[]>([
-      { id: id_increment++, name: "hello", type: "", value: "" },
+      { id: id_increment++, name: "Item 1", type: "", value: "" },
     ]);
 
     const onTypeChange = (s: Structure) => {
@@ -244,7 +257,7 @@ export default defineComponent({
     const addNewStruct = () => {
       structureList.value.push({
         id: id_increment++,
-        name: "hello",
+        name: "Item " + (id_increment - 1),
         type: "",
         value: "",
       });
@@ -259,7 +272,7 @@ export default defineComponent({
     const copyStruct = (s: Structure) => {
       structureList.value.push({
         id: id_increment++,
-        name: s.name + " copy",
+        name: s.name + " copied",
         type: s.type,
         length: s.length,
         hasLenght: s.hasLenght,
@@ -322,9 +335,20 @@ h3 {
 .add-struct .el-button {
   min-width: 400px !important;
 }
-
 .ghost {
   opacity: 0.2;
   background: var(--el-button-bg-color);
+}
+
+.item-label {
+  font-size: 12px;
+  color: var(--el-color-primary);
+  margin-bottom: 1px;
+
+  border-bottom: 1px dotted var(--el-color-primary);
+}
+
+.item-label:hover {
+  cursor: pointer;
 }
 </style>

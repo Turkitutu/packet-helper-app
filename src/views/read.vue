@@ -20,10 +20,11 @@
       draggable=".struct-card"
     >
       <template #item="{ element }">
-        <el-card class="struct-card" shadow="always" disabled>
+        <el-card class="struct-card" shadow="always">
           <el-row :gutter="20">
             <el-col :span="6">
               <el-select
+                @change="onTypeChange(element)"
                 v-model="element.type"
                 class="m-2"
                 placeholder="Select the type"
@@ -63,6 +64,7 @@
                   v-model="element.length"
                   type="number"
                   placeholder="length"
+                  @keyup="updateStructureValues()"
                 />
               </el-col>
               <el-col :span="13">
@@ -143,6 +145,11 @@ export default defineComponent({
       { id: id_increment++, name: "hello", type: "", value: "" },
     ]);
 
+    const onTypeChange = (s: Structure) => {
+      if (s.length) s.length = undefined;
+      updateStructureValues();
+    };
+
     const updateStructureValues = () => {
       invalid.value = false;
       const packet = new Packet(Buffer.from(hexData.value, "hex"));
@@ -182,14 +189,6 @@ export default defineComponent({
     });
 
     const invalid = ref(false);
-
-    watch(
-      structureList,
-      () => {
-        updateStructureValues();
-      },
-      { deep: true }
-    );
 
     const typeList = [
       { name: "Boolean", key: "bool" },
@@ -233,6 +232,8 @@ export default defineComponent({
       addNewStruct,
       content,
       invalidHex,
+      updateStructureValues,
+      onTypeChange,
     };
   },
 });

@@ -59,7 +59,7 @@
               </el-select>
             </el-col>
             <template v-if="!element.hasLenght">
-              <el-col :span="16">
+              <el-col :span="15">
                 <el-input
                   class="struct-input"
                   v-model="element.value"
@@ -79,7 +79,7 @@
                   @change="updateStructureValues()"
                 />
               </el-col>
-              <el-col :span="13">
+              <el-col :span="12">
                 <el-input
                   class="struct-input"
                   v-model="element.value"
@@ -88,15 +88,28 @@
                 />
               </el-col>
             </template>
-            <el-col :span="2" class="m-2">
-              <el-button
-                v-if="structureList.length != 1"
-                type="danger"
-                @click="deleteStruct(element.id)"
-                plain
-                :icon="Delete"
-                circle
-              ></el-button>
+            <el-col :span="3" class="m-2">
+              <el-row>
+                <el-col :span="10">
+                  <el-button
+                    type="primary"
+                    @click="copyStruct(element)"
+                    plain
+                    :icon="CopyDocument"
+                    circle
+                  ></el-button>
+                </el-col>
+                <el-col :span="10">
+                  <el-button
+                    v-if="structureList.length != 1"
+                    type="danger"
+                    @click="deleteStruct(element.id)"
+                    plain
+                    :icon="Delete"
+                    circle
+                  ></el-button>
+                </el-col>
+              </el-row>
             </el-col>
           </el-row>
         </el-card>
@@ -112,7 +125,7 @@
 import { defineComponent, ref } from "vue";
 import Packet from "@/helpers/packet";
 import draggable from "vuedraggable";
-import { Delete } from "@element-plus/icons-vue";
+import { Delete, CopyDocument } from "@element-plus/icons-vue";
 
 interface Structure {
   id: number;
@@ -240,6 +253,19 @@ export default defineComponent({
 
     const deleteStruct = (id: number) => {
       structureList.value = structureList.value.filter((item) => item.id != id);
+      updateStructureValues();
+    };
+
+    const copyStruct = (s: Structure) => {
+      structureList.value.push({
+        id: id_increment++,
+        name: s.name + " copy",
+        type: s.type,
+        length: s.length,
+        hasLenght: s.hasLenght,
+        value: "",
+      });
+      updateStructureValues();
     };
 
     return {
@@ -249,14 +275,19 @@ export default defineComponent({
       stringTypeList,
       unsignedTypeList,
       hexData,
-      Delete,
-      deleteStruct,
-      addNewStruct,
       content,
       invalidHex,
       updateStructureValues,
       onTypeChange,
       onHexDataChange,
+
+      deleteStruct,
+      addNewStruct,
+      copyStruct,
+
+      // icons
+      CopyDocument,
+      Delete,
     };
   },
 });

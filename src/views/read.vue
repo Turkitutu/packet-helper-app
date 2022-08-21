@@ -19,6 +19,8 @@
       ghost-class="ghost"
       animation="200"
       draggable=".struct-card"
+      @dragstart="updateStructureValues()"
+      @dragend="updateStructureValues()"
     >
       <template #item="{ element }">
         <el-card class="struct-card" shadow="always">
@@ -184,7 +186,6 @@ export default defineComponent({
         } catch (err) {
           invalid.value = true;
           s.value = "";
-          console.log(packet.available);
           console.error(err);
         }
         return s;
